@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+require 'csv_file_reader'
+CsvFileReader::CLI.start
