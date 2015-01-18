@@ -5,8 +5,9 @@ require 'csv'
 module CsvFileReader
   class CLI < Thor
     desc "red WORD", "red words print." # コマンドの使用例と、概要
-    def csv_read # コマンドはメソッドとして定義する
-      table = CSV.table('data.csv')
+    option :csv, :type => :string, :aliases => '-c', :desc => "csv file", :required => true
+    def exec # コマンドはメソッドとして定義する
+      table = CSV.table(options[:csv])
       p table
     end
   end
