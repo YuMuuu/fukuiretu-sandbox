@@ -1,0 +1,104 @@
+require "rake"
+require "aws-sdk-core"
+require "dotenv"
+
+Dotenv.load
+
+# テンプレートとするコンフィグ
+TEMPLATE_JSON = "template.json"
+
+# 設定ファイルに渡せる変数
+VARIABLES = %w[
+  chef_version
+  centos_version
+  ruby_version
+]
+
+# box出力用ディレクトリ
+BOX_OUTPUT_DIR = "./build"
+
+namespace :packer do
+  namespace :vb do
+    desc "Run packer validate for virtualbox-iso"
+    task :validate do
+      exec_packer(
+        builder_type: "virtualbox-iso",
+        sub_command: "validate"
+      )
+    end
+
+    desc "Run packer build for virtualbox-iso"
+    task :build do
+      exec_packer(
+        builder_type: "virtualbox-iso",
+        sub_command: "build"
+      )
+
+      upload_box_to_s3
+    end
+
+    desc "Run s3 upload for virtualbox-iso"
+    task :s3upload do
+      upload_box_to_s3
+    end
+  end
+
+  # packerコマンドを実行します
+  # - builder_type ビルドタイプ String
+  # - sub_command サブコマンド String
+  #
+  # Returns 実行したコマンド(debug用)
+  def exec_packer(builder_type:, sub_command:)
+    if Dir.exist?(BOX_OUTPUT_DIR)
+      # 念のためboxの出力先をクリーンしておく
+      Dir.glob("#{BOX_OUTPUT_DIR}/*").each { |f| File.unlink(f) }
+    else
+      Dir.mkdir(BOX_OUTPUT_DIR)
+    end
+
+    # packerコマンドを生成して実行する
+    command = "packer #{sub_command} -var 'box_output_dir=#{BOX_OUTPUT_DIR}' "
+    VARIABLES.each do |var|
+      if ENV.has_key?(var.upcase)
+        command << "-var '#{var}=#{ENV[var.upcase]}' "
+      end
+    end
+    command << "--only=#{builder_type} #{TEMPLATE_JSON}"
+    sh command
+
+    # debug
+    command
+  end
+
+  # 生成されたboxファイルをS3にアップロードします
+  #
+  # Returns none
+  def upload_box_to_s3
+    # boxファイルは1件しかない想定。念のため1件以外の時は例外飛ばしておく。
+    box_file_path =
+      if Dir.glob("#{BOX_OUTPUT_DIR}/*").size == 1
+        Dir.glob("#{BOX_OUTPUT_DIR}/*").first
+      else
+        raise "box files can only do not expect one"
+      end
+
+    # ビルドしたboxをS3に転送する
+    Aws.config[:s3] = {
+      region: ENV["REGION"],
+      credentials: Aws::Credentials.new(ENV["AWS_ACCESS_KEY_ID"], ENV["AWS_SECRET_ACCESS_KEY"])
+    }
+
+    resp = Aws::S3::Client.new.put_object(
+      bucket: ENV["S3_BUCKET"],
+      body: File.open(box_file_path),
+      key: "vagrant/virtualbox/#{File.basename(box_file_path)}",
+      acl: "public-read"
+    )
+
+    puts "output vagrant box endpoint:"
+    puts "  #{resp.context.http_request.endpoint.to_s}"
+
+    # 転送したらboxファイルは不要なので削除
+    File.unlink(box_file_path)
+  end
+end

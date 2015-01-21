@@ -1,0 +1,94 @@
+{
+  "variables": {
+    "centos_version": "6.6",
+    "chef_version": "11.16.4",
+    "mirror": "http://ftp.iij.ad.jp/pub/linux/centos",
+    "ruby_version": "2.1.5",
+    "box_output_dir": ""
+  },
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "boot_command": [
+        "<tab> text ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/centos-{{user `centos_version`}}/ks.cfg<enter><wait>"
+      ],
+      "boot_wait": "10s",
+      "disk_size": 40960,
+      "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+      "guest_os_type": "RedHat_64",
+      "http_directory": "http",
+      "iso_checksum": "08be09fd7276822bd3468af8f96198279ffc41f0",
+      "iso_checksum_type": "sha1",
+      "iso_url": "{{user `mirror`}}/{{user `centos_version`}}/isos/x86_64/CentOS-{{user `centos_version`}}-x86_64-bin-DVD1.iso",
+      "output_directory": "packer-centos-{{user `centos_version`}}-x86_64-virtualbox",
+      "shutdown_command": "echo 'vagrant'|sudo -S /sbin/halt -h -p",
+      "ssh_password": "vagrant",
+      "ssh_port": 22,
+      "ssh_username": "vagrant",
+      "ssh_wait_timeout": "10000s",
+      "vboxmanage": [
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--memory",
+          "480"
+        ],
+        [
+          "modifyvm",
+          "{{.Name}}",
+          "--cpus",
+          "1"
+        ]
+      ],
+      "virtualbox_version_file": ".vbox_version",
+      "vm_name": "packer-centos-{{user `centos_version`}}-x86_64"
+    }
+  ],
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "only": ["virtualbox-iso"],
+      "output": "{{user `box_output_dir`}}/centos-{{user `centos_version`}}-x86_64-ruby-{{user `ruby_version`}}-{{timestamp}}.box"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "only": ["virtualbox-iso"],
+      "environment_vars": [
+        "CHEF_VERSION={{user `chef_version`}}"
+      ],
+      "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+      "scripts": [
+        "scripts/centos/fix-slow-dns.sh",
+        "scripts/common/sshd.sh",
+        "scripts/common/vagrant.sh",
+        "scripts/common/vmtools.sh",
+        "scripts/common/chef.sh",
+        "scripts/centos/cleanup.sh",
+        "scripts/common/minimize.sh"
+      ]
+    },
+    {
+      "type": "chef-solo",
+      "install_command": "curl -L https://www.opscode.com/chef/install.sh | {{if .Sudo}}sudo{{end}} bash -s -- -v {{user `chef_version`}}",
+      "cookbook_paths": ["../chef/repo/berks-cookbooks"],
+      "run_list": ["ruby_build", "rbenv::system"],
+      "json": {
+        "rbenv" : {
+          "global": "{{user `ruby_version`}}",
+          "rubies": [
+            "{{user `ruby_version`}}"
+          ]
+        }
+      },
+      "prevent_sudo": false
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo chmod -R 775 /usr/local/rbenv/"
+      ]
+    }
+  ]
+}

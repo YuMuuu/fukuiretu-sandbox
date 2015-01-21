@@ -1,0 +1,44 @@
+DEPENDENCIES
+  mysql
+  nodejs
+  rbenv
+    git: git://github.com/fnichol/chef-rbenv.git
+    revision: 0a3018634bafe58ad21c6ee271af015220e444b9
+  ruby_build
+  selinux
+  yum
+
+GRAPH
+  7-zip (1.0.2)
+    windows (>= 1.2.2)
+  apt (2.6.1)
+  ark (0.9.0)
+    7-zip (>= 0.0.0)
+    windows (>= 0.0.0)
+  build-essential (2.1.3)
+  chef_handler (1.1.6)
+  java (1.29.0)
+  mysql (6.0.10)
+    smf (>= 0.0.0)
+    yum-mysql-community (>= 0.0.0)
+  nodejs (2.2.0)
+    apt (>= 0.0.0)
+    ark (>= 0.0.0)
+    build-essential (>= 0.0.0)
+    yum-epel (>= 0.0.0)
+  rbac (1.0.2)
+  rbenv (0.7.3)
+    java (> 1.4.0)
+    ruby_build (>= 0.0.0)
+  ruby_build (0.8.0)
+  selinux (0.8.0)
+  smf (2.2.1)
+    rbac (>= 1.0.1)
+    resource-control (>= 0.0.0)
+  windows (1.36.1)
+    chef_handler (>= 0.0.0)
+  yum (3.5.2)
+  yum-epel (0.6.0)
+    yum (~> 3.0)
+  yum-mysql-community (0.1.12)
+    yum (>= 3.0)

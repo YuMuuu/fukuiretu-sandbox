@@ -1,0 +1,3 @@
+[submodule "packer_vb/vendor/templates/bento"]
+	path = packer_vb/vendor/templates/bento
+	url = https://github.com/opscode/bento
