@@ -4,7 +4,14 @@ class MyJob < ActiveJob::Base
   def perform(message)
     sleep(1)
     Rails.logger.info(message)
-    scp
+
+    exception_cb = Proc.new do |exception|
+      Rails.logger.info(exception.to_s)
+    end
+
+    Retryable.retryable(:tries => 5, :sleep => 1, :exception_cb => exception_cb) do
+      scp
+    end
   end
 
   private
