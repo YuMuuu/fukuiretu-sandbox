@@ -28,7 +28,8 @@ var TodoList = React.createClass({
     var rows = this.props.todos.filter(function(todo){
       return !todo.done;
     }).map(function(todo){
-      // Note: Todoコンポーネントからthis.props.todoで参照される
+      // Note: Todoコンポーネントからthis.props.todoで参照される.
+      // key属性はコンポーネントを配列化する場合必須.
       return (<Todo key={todo.id} todo={todo}></Todo>);
     });
 
