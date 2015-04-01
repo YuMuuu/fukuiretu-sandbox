@@ -42,11 +42,47 @@ var TodoList = React.createClass({
   }
 });
 
+var TodoForm = React.createClass({
+  getInitialState: function(){
+    return {
+      name: ''
+    }
+  },
+  handleNameChange: function(e){
+    this.setState({
+      name: e.target.value
+    })
+  },
+  handleSubmit: function(e){
+    e.preventDefault();
+    var name = this.state.name.trim();
+    alert(name);
+    this.setState({
+      name: ''
+    });
+  },
+  render: function() {
+    var disabled = this.state.name.trim().length <= 0;
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <input value={this.state.name} onChange={this.handleNameChange}></input>
+        <input type="submit" disabled={disabled}></input>
+      </form>
+    );
+  }
+})
+
+
+
+
+
+
 var App = React.createClass({
   render : function(){
     return (
       <div>
         <h1>My Todo</h1>
+        <TodoForm/>
         // Note: TodoListコンポーネントからthis.props.todosで参照される
         <TodoList todos={todos}/>
       </div>
